@@ -1,64 +1,22 @@
 pipeline {
     agent any
-
-    tools {
-        nodejs 'Node18'   // Jenkins → Global Tool Configuration
-    }
-
-    options {
-        timeout(time: 30, unit: 'MINUTES')
-        buildDiscarder(logRotator(numToKeepStr: '10'))
-        timestamps()
-    }
-
-    environment {
-        NODE_ENV = 'production'
-    }
+      
 
     stages {
-
-        stage('Checkout SCM') {
+        stage('Git checkout') {
             steps {
-                checkout scm
+                // Get some code from a GitHub repository
+                git 'https://github.com/syedismailpasha451-rgb/Trading-UI.git'
+                   }
+}
+        stage('Install npm prerequisites'){
+            steps{
+                sh'npm audit fix'
+                sh'npm install'
+                sh'npm run build'
+                sh'cd /var/lib/jenkins/workspace/Trading-ui-pipeline/build'
+                sh'pm2 --name Trading-UI start npm -- start'
             }
-        }
-
-        stage('Install Dependencies') {
-            steps {
-                sh '''
-                  npm ci
-                '''
-            }
-        }
-
-        stage('Security Audit (Non-blocking)') {
-            steps {
-                sh '''
-                  npm audit || true
-                '''
-            }
-        }
-
-        stage('Build Application') {
-            steps {
-                sh '''
-                  npm run build
-                '''
-            }
-        }
-    }
-
-    post {
-        success {
-            echo "✅ Build completed successfully"
-        }
-
-        failure {
-            echo "❌ Build failed"
-        }
-
-        always {
-            cleanWs()
         }
     }
 }
